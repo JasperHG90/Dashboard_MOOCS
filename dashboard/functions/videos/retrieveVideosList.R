@@ -19,16 +19,22 @@ retrieveVideosList <- function(con, from = as.character(Sys.Date() - 30),
   if(is.na(try(as.Date(to, format = "%Y-%m-%d")))) stop("Please enter a date in the following format: YYYY-MM-DD")
   
   # Retrieve data frame of Videos
-  vl <- tbl(con, "course_items") %>%
+  vl <- tbl(con, "course_items") %>% 
     # Select course_item_id and course_item_name
     select(., course_item_id, course_item_name, course_item_type_id) %>%
     # Filter by item type "video" type = 1
     filter(course_item_type_id == 1) %>%
     # Join with course_progress tables
     inner_join(tbl(con, "course_progress"), by="course_item_id") %>%
-    # Drop variables
-    select(-course_item_type_id) %>%
-    
+    # Filter for completed videos and dates
+    filter(course_progress_ts >= from,
+           course_progress_ts <= to,
+           course_progress_state_type_id == 2) %>%
+    # Select
+    select(course_item_name) %>%
+    # Count by video
+    group_by(course_item_name) %>%
+    tally() %>%
     collect()
 }
     

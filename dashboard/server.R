@@ -615,19 +615,15 @@ function(input, output, session) {
     # Connect to postgres
     con <- psql(psql_host(), psql_port(), psql_user(), psql_pwd(), psql_db())
     # Retrieve tests
-    t <- retrieveVideosList(con, from = d[1], to = d[2]) 
+    CPV <- retrieveVideosList(con, from = d[1], to = d[2]) 
     # Close connection
     dbDisconnect(con$con)
-    # Filter the data and compile into a data frame
-    t <- t %>%
-      filter(course_progress_state_type_id == 2) %>%
-      select(course_item_name)
-    cv <- table(t)
-    CPV <- as.data.frame(cv)  
+    # Rename
+    names(CPV) <- c("Video", "Completers")
     
-    # Rename columns
-    colnames(CPV)[colnames(CPV)=="t"] <- "Video"
-    colnames(CPV)[colnames(CPV)=="Freq"] <- "Completers"
+    # Reorder factor
+    CPV$Video <- as.factor(CPV$Video)
+    CPV$Video <- reorder(CPV$Video, -CPV$Completers)
     
     # Plot
     p <- ggplot(CPV, aes(x = Video, 
